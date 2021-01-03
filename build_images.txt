@@ -1,0 +1,51 @@
+set DOBASEDIR=\dockerfiles\dhadoopgit\base
+docker build -t hshv-centos .
+cd ..\namenode
+docker build -t nnlocal .
+cd ..\datanode
+docker build -t dnlocal .
+cd ..\resourcemanager
+docker build -t rmlocal .
+cd ..\nodemanager
+docker build -t nmlocal .
+cd ..\job-history
+docker build -t jhlocal .
+cd ..\hive-metastore
+docker build -t hmlocal .
+cd ..\hiveserver2
+docker build -t hs2local
+cd ..\spark-master
+docker build -t smlocal .
+cd ..\spark-worker
+docker build -t swlocal .
+cd ..\spark-thrift
+docker build -t stslocal .
+cd ..\spark-history
+docker build -t shslocal .
+
+    DOBASEDIR=/mnt/d/dockerfiles/dhadoopgit/base
+    cd $DOBASEDIR
+    docker build -t hshv-centos .
+    cd ../namenode
+    docker build -t nnlocal .
+    cd ../datanode
+    docker build -t dnlocal .
+    cd ../resourcemanager
+    docker build -t rmlocal .
+    cd ../nodemanager
+    docker build -t nmlocal .
+    cd ../job-history
+    docker build -t jhlocal .
+    cd ../hive-metastore
+    docker build -t hmlocal .
+    cd ../hiveserver2
+    docker build -t hs2local
+    cd ../spark-master
+    docker build -t smlocal .
+    cd ../spark-worker
+    docker build -t swlocal .
+    cd ../spark-thrift
+    docker build -t stslocal .
+    cd ../spark-history
+    docker build -t shslocal .
+    cd ..

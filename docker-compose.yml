@@ -1,0 +1,179 @@
+version: "3"
+
+services:
+  namenode:
+    image: nnlocal
+    container_name: namenode
+    hostname: namenode.hadoop
+    restart: unless-stopped
+    ports:
+      - 9870:9870
+    volumes:
+      - ./data/namenode:/hadoop/dfs/name
+    environment:
+      - CLUSTER_NAME=test
+    env_file:
+      - ./hadoop.env
+
+  datanode:
+    image: dnlocal
+    container_name: datanode
+    hostname: datanode.hadoop
+    restart: unless-stopped
+    volumes:
+      - ./data/datanode:/hadoop/dfs/data
+    ports:
+      - 9864:9864
+    environment:
+      SERVICE_PRECONDITION: "namenode.hadoop:9870"
+    env_file:
+      - ./hadoop.env
+  
+  resourcemanager:
+    image: rmlocal
+    container_name: resourcemanager
+    hostname: resourcemanager.hadoop
+    restart: unless-stopped
+    ports:
+      - 8088:8088
+    environment:
+     SERVICE_PRECONDITION: "namenode.hadoop:9870 datanode.hadoop:9864"
+    env_file:
+      - ./hadoop.env
+
+  nodemanager:
+    image: nmlocal
+    container_name: nodemanager
+    hostname: nodemanager.hadoop
+    restart: unless-stopped
+    ports: 
+      - 8042:8042
+    environment:
+     SERVICE_PRECONDITION: "namenode.hadoop:9870 datanode.hadoop:9864 resourcemanager.hadoop:8088"
+    env_file:
+      - ./hadoop.env
+
+  dnsproxy:
+    image: dnslocal
+    hostname: dnsproxy.hadoop
+    container_name: dnsproxy
+  
+  historyserver:
+    image: jhlocal
+    container_name: historyserver
+    hostname: jhlocal.hadoop
+    restart: unless-stopped
+    ports:
+      - 19888:19888
+    environment:
+     SERVICE_PRECONDITION: "namenode:9870 datanode:9864 resourcemanager:8088"
+    env_file:
+      - ./hadoop.env
+  
+  # need a container with postgresql running
+  # this is just built using the bde2020/docker-hive-metastore-postgresql repo
+  # and tagged as psql-hm
+  # and hive environment variables added to the env file
+  #psql-hm is the postgresql container
+  psql-hm:
+    image: psql-hm
+    hostname: psql-hm.hadoop
+    container_name: psql-hm
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+       
+# postgresql hive metastore
+
+# hive-metastore is the base image container with hive service metastore in its run.sh file
+# so in hive settings jdbc to psql-hm and hive-metastore-uris should use container hive-metastore
+  hive-metastore:
+    image: hmlocal
+    hostname: hmlocal.hadoop
+    container_name: hive-metastore
+    # hive metastore local
+    env_file:
+      - ./hadoop.env
+    environment:
+      SERVICE_PRECONDITION: "psql-hm:5432"
+  
+  hiveserver2:
+    image: hs2local
+    hostname: hiveserver2.hadoop
+    container_name: hiveserver2
+    ports:
+      - 10000:10000
+      - 10002:10002
+    env_file: 
+      - ./hadoop.env
+    environment:
+      SERVICE_PRECONDITION: "namenode.hadoop:9870 hive-metastore:9083"
+
+  spark-master:
+    image: smlocal
+    hostname: spark-master.hadoop
+    container_name: spark-master
+    volumes:
+      - ./data/datalocal:/testdata
+    env_file:
+      - ./hadoop.env
+    ports:
+      - 8080:8080
+      - 4040:4040
+
+  spark-worker:
+    image: swlocal
+    hostname: spark-worker.hadoop
+    container_name: spark-worker
+    env_file:
+      - ./hadoop.env
+    ports:
+      - 8081:8081
+    environment:
+      SERVICE_PRECONDITION: "spark-master:8080"
+
+  # spark-thrift:
+  #   image: stslocal
+  #   hostname:  spark-thrift.hadoop
+  #   container_name: spark-thrift
+  #   env_file:
+  #     - ./hadoop.env
+  #   volumes:
+  #     - ./data/swdir:/swdir
+  #   restart: unless-stopped
+  #   ports:
+  #     - 10002:10002
+  #   environment:
+  #     SERVICE_PRECONDITION: "spark-master:8080"
+
+  spark-history:
+    image: shslocal
+    container_name: spark-history
+    restart: unless-stopped
+    volumes:
+      - ./data/spah:/spah
+    ports:
+      - 18080:18080
+    env_file:
+      ./hadoop.env
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870 datanode:9864"
+
+networks:
+  default:
+    external:
+      name: hadoop
+
+volumes:
+  pgdata:
+
+# run spark shell against running spark master
+# docker container exec -it spark-master hdfs dfs -mkdir -p /user/root
+# docker container exec -it spark-master hdfs dfs -mkdir -p /user/root
+# docker container exec -it spark-master spark-shell --master spark://spark-master:7077
+# sc.textFile("oui.txt").flatMap(_ split "\\s+").filter(_ != "").map(x => (x.toLowerCase, 1)).reduceByKey(_ + _).sortBy(- _._2).saveAsTextFile("file:///testdata/ouiwc")
+# import sys.process._
+#  "updatedb" !
+# "locate oui.txt" !
