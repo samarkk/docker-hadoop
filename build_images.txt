@@ -1,4 +1,4 @@
-set DOBASEDIR=\dockerfiles\dhadoopgit\base
+set DOBASEDIR=\dockerfiles\docker-hadoop\base
 docker build -t hshv-centos .
 cd ..\namenode
 docker build -t nnlocal .
@@ -23,7 +23,7 @@ docker build -t stslocal .
 cd ..\spark-history
 docker build -t shslocal .
 
-    DOBASEDIR=/mnt/d/dockerfiles/dhadoopgit/base
+    DOBASEDIR=/mnt/d/dockerfiles/docker-hadoop/base
     cd $DOBASEDIR
     docker build -t hshv-centos .
     cd ../namenode
